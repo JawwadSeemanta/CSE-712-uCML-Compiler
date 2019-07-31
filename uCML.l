@@ -1,11 +1,14 @@
 %option noyywrap yylineno
 
 %{
-#include "uCML.tab.h"
+#include <string>
+#include "node.h"
+#include "parser.hpp"
 
-void yyerror(const char *);
-int error_count = 0;
-extern char* yytext;
+#define SAVE_TOKEN  yylval.string = new std::string(yytext, yyleng)
+#define TOKEN(t)    (yylval.token = t)
+
+extern void yyerror(const char *);
 
 %}
 
@@ -27,30 +30,30 @@ data_type int|double|void
 
 %%
 
-","				          		return TCOMMA;
-":"         					return TCOLON;
+","				          		return TOKEN(TCOMMA);
+":"         					return TOKEN(TCOLON);
 
-"("	          					return TLPAREN;
-")"					          	return TRPAREN;
-"{"         					return TLBRACE;
-"}"					          	return TRBRACE;
+"("	          					return TOKEN(TLPAREN);
+")"					          	return TOKEN(TRPAREN);
+"{"         					return TOKEN(TLBRACE);
+"}"					          	return TOKEN(TRBRACE);
 
 
-"+"				          		return TPLUS;
-"-"		          				return TMINUS;
-"*"		          				return TMUL;
-"/"				          		return TDIV;
+"+"				          		return TOKEN(TPLUS);
+"-"		          				return TOKEN(TMINUS);
+"*"		          				return TOKEN(TMUL);
+"/"				          		return TOKEN(TDIV);
 
-"=="				          	return TCEQ;
-"!="			          		return TCNE;
-"<"				          		return TCLT;
-"<="	          				return TCLE;
-">"				          		return TCGT;
-">="					        return TCGE;
+"=="				          	return TOKEN(TCEQ);
+"!="			          		return TOKEN(TCNE);
+"<"				          		return TOKEN(TCLT);
+"<="	          				return TOKEN(TCLE);
+">"				          		return TOKEN(TCGT);
+">="					        return TOKEN(TCGE);
 
 "=>" 							return define_sign;
 
-"="						        return TEQUAL;
+"="						        return TOKEN(TEQUAL);
 
 "def" 							return def;
 "in" 							return in;
@@ -63,9 +66,9 @@ data_type int|double|void
 "return" 						return RETURN;
 
 
-{data_type} 					return data_type;
-{numbers} 						return num;
-{id} 							return id;
+{data_type} 					SAVE_TOKEN; return data_type;
+{numbers} 						SAVE_TOKEN; return num;
+{id} 							SAVE_TOKEN; return id;
 
 {whitespace} {/* Do nothing */}
 {newline} {/* Do nothing */};
@@ -73,8 +76,3 @@ data_type int|double|void
 . {yyerror("Unrecognized character"); yyterminate();}
 
 %%
-
-void yyerror(const char *err_msg ) { 
-	error_count++;
-	fprintf( stderr, "\nLine %02d : Error near \"%s\"\n\t%s\n",yylineno, yytext, err_msg);
-}

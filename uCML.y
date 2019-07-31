@@ -1,70 +1,110 @@
 %{
-	#include<stdio.h>
-	#include<stdlib.h>
+	#include "node.h"
+    #include <cstdio>
+    #include <cstdlib>
+	NBlock *programBlock; /* the top level root node of our final AST */
 
-    int yylex();
-    void yyerror(const char *);
-    extern FILE* yyin;
+    extern int yylex();
     extern int yylineno;
-    int error_count;
+    int error_count = 0;
+    void yyerror(const char *s) {error_count++; std::printf("Error %02d: %s at line %02d ", error_count, s, yylineno); }
 %}
 
 %error-verbose
 
-%start program
+/* Represents the many different ways we can access our data */
+%union {
+	Node *node;
+	NBlock *block;
+	NExpression *expr;
+	NStatement *stmt;
+	NIdentifier *ident;
+	NVariableDeclaration *var_decl;
+	std::vector<NVariableDeclaration*> *varvec;
+	std::vector<NExpression*> *exprvec;
+	std::string *string;
+	int token;
+}
 
-%token TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
-%token TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TCOLON
-%token TPLUS TMINUS TMUL TDIV
+/* Define our terminal symbols (tokens). This should
+   match our tokens.l lex file. We also define the node type
+   they represent.
+ */
 
-%token id num data_type
-%token EXTERN IF ELSE FOR RETURN
-%token def in to by
-%token define_sign
+%token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
+%token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TCOLON
+%token <token> TPLUS TMINUS TMUL TDIV
+
+%token <string> id num data_type
+%token <token> EXTERN IF ELSE FOR RETURN
+%token <token> def in to by
+%token <token> define_sign
+
+
+/* Define the type of node our nonterminal symbols represent.
+   The types refer to the %union declaration above. Ex: when
+   we call an ident (defined by union type ident) we are really
+   calling an (NIdentifier*). It makes the compiler happy.
+ */
+ 
+%type <ident> IDENTIFIER DATA_TYPE
+%type <expr> NUMBER expr
+%type <varvec> func_decl_args
+%type <exprvec> call_args
+%type <block> program stmts block
+%type <stmt> stmt var_decl func_decl extern_decl
+%type <token> comparision_operation arithmatic_operation
 
 /* Operator precedence for mathematical operators */
 %left TPLUS TMINUS
 %left TMUL TDIV
 
+
+%start program
+
 %%
 program: 
-	stmts
+	stmts { programBlock = $1; }
 	;
 
 stmts: 
-	stmt
+	stmt { $$ = new NBlock(); $$->statements.push_back($<stmt>1); }
 	| stmts stmt
-	
+	;
 
 stmt:
-	extern_decl
+	expr { $$ = new NExpressionStatement(*$1); }
+	|extern_decl
 	| var_decl 
-	| assignment 
 	| conditional_stmt
 	| loop_stmt
 	| RETURN expr
 	| func_decl
-	| expr
 	
 	| error
 	| TLPAREN error TRPAREN
 	| TLBRACE error TRBRACE
 	;
 	
-TYPE:
-	TCOLON data_type 
+IDENTIFIER:
+	id { $$ = new NIdentifier(*$1); delete $1; }
 	;
+
+NUMBER:
+	num { $$ = new NInteger(atol($1->c_str())); delete $1; }
+	;
+
+DATA_TYPE:
+	data_type { $$ = new NIdentifier(*$1); delete $1; }
+	;
+	
 extern_decl:
-	EXTERN id TLPAREN func_decl_args TRPAREN TYPE 
+	EXTERN IDENTIFIER TLPAREN func_decl_args TRPAREN TCOLON DATA_TYPE 
 	;
 
 var_decl:
-	id TYPE 
-	;
-
-assignment:
-	id TEQUAL expr 
-	| id TYPE TEQUAL expr 
+	IDENTIFIER TCOLON DATA_TYPE { $$ = new NVariableDeclaration(*$3, *$1); }
+	| IDENTIFIER TCOLON DATA_TYPE TEQUAL expr { $$ = new NVariableDeclaration(*$3, *$1, $5); }
 	;
 
 conditional_stmt:
@@ -73,8 +113,8 @@ conditional_stmt:
 	;
 
 loop_stmt:
-	FOR TLPAREN  id TYPE in expr to expr TRPAREN block 
-	| FOR TLPAREN  id TYPE in expr to expr by expr TRPAREN block 
+	FOR TLPAREN  IDENTIFIER TCOLON DATA_TYPE in expr to expr TRPAREN block 
+	| FOR TLPAREN  IDENTIFIER TCOLON DATA_TYPE in expr to expr by expr TRPAREN block 
 	;
 
 block:
@@ -83,7 +123,7 @@ block:
 	;
 
 func_decl:
-	def id TLPAREN func_decl_args TRPAREN TYPE define_sign block 
+	def IDENTIFIER TLPAREN func_decl_args TRPAREN TCOLON DATA_TYPE define_sign block 
 	;
 
 func_decl_args:
@@ -93,7 +133,7 @@ func_decl_args:
 	;
 	
 func_call:
-	id TLPAREN call_args TRPAREN 
+	IDENTIFIER TLPAREN call_args TRPAREN 
 	;
 
 call_args:
@@ -103,8 +143,9 @@ call_args:
 	;
 
 expr:
-	id 
-	| num 
+	IDENTIFIER { $<ident>$ = $1; }
+	| NUMBER
+	| IDENTIFIER TEQUAL expr { $$ = new NAssignment(*$<ident>1, *$3); }
 	| expr operation expr
     | TLPAREN expr TRPAREN 
     | func_call
@@ -131,27 +172,3 @@ comparision_operation:
 	;
 	
 %%
-
-
-int main(int argc, char **argv){
-	
-	if(argc>1)
-        {
-        yyin = fopen(argv[1],"r");
-        if(yyin == 0)
-            yyin = stdin;
-        }
-    else
-        yyin = stdin;
-
-    int flag = yyparse();
-    
-    fclose(yyin);
-    
-    if(error_count)
-    	printf("\nTotal Errors: %02d\n", error_count);
-    else
-    	printf("No Error Detected\n");
-    	
-    return flag;
-}
