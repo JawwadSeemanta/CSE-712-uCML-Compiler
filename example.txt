@@ -1,4 +1,11 @@
-a : int 
+extern printi(i:int):void
+
+a:int
 a = 10
-b : int = 5
+b:int = 5 + 6
+
+return b
+
+printi(b + 9)
+printi(5)
 

@@ -2,12 +2,12 @@
 	#include "node.h"
     #include <cstdio>
     #include <cstdlib>
-	NBlock *programBlock; /* the top level root node of our final AST */
+	NBlock *programBlock; /* Root Node of AST */
 
     extern int yylex();
     extern int yylineno;
     int error_count = 0;
-    void yyerror(const char *s) {error_count++; std::printf("Error %02d: %s at line %02d ", error_count, s, yylineno); }
+    void yyerror(const char *s) {error_count++; std::printf("Error %02d: %s at line %02d \n", error_count, s, yylineno); }
 %}
 
 %error-verbose
@@ -26,10 +26,7 @@
 	int token;
 }
 
-/* Define our terminal symbols (tokens). This should
-   match our tokens.l lex file. We also define the node type
-   they represent.
- */
+/* Defining terminal symbols (tokens) and their the node type */
 
 %token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TCOLON
@@ -41,11 +38,7 @@
 %token <token> define_sign
 
 
-/* Define the type of node our nonterminal symbols represent.
-   The types refer to the %union declaration above. Ex: when
-   we call an ident (defined by union type ident) we are really
-   calling an (NIdentifier*). It makes the compiler happy.
- */
+/* Define the type of node of nonterminal symbols */
  
 %type <ident> IDENTIFIER DATA_TYPE
 %type <expr> NUMBER expr
@@ -53,13 +46,13 @@
 %type <exprvec> call_args
 %type <block> program stmts block
 %type <stmt> stmt var_decl func_decl extern_decl
-%type <token> comparision_operation arithmatic_operation
+%type <token> operation arithmatic_operation comparision_operation
 
 /* Operator precedence for mathematical operators */
 %left TPLUS TMINUS
 %left TMUL TDIV
-
-
+ 
+/* define start point */
 %start program
 
 %%
@@ -69,16 +62,16 @@ program:
 
 stmts: 
 	stmt { $$ = new NBlock(); $$->statements.push_back($<stmt>1); }
-	| stmts stmt
+	| stmts stmt { $1->statements.push_back($<stmt>2); }
 	;
 
 stmt:
 	expr { $$ = new NExpressionStatement(*$1); }
-	|extern_decl
+	| extern_decl
 	| var_decl 
 	| conditional_stmt
 	| loop_stmt
-	| RETURN expr
+	| RETURN expr { $$ = new NReturnStatement(*$2); }
 	| func_decl
 	
 	| error
@@ -99,7 +92,7 @@ DATA_TYPE:
 	;
 	
 extern_decl:
-	EXTERN IDENTIFIER TLPAREN func_decl_args TRPAREN TCOLON DATA_TYPE 
+	EXTERN IDENTIFIER TLPAREN func_decl_args TRPAREN TCOLON DATA_TYPE { $$ = new NExternDeclaration(*$7, *$2, *$4); delete $4; }
 	;
 
 var_decl:
@@ -127,9 +120,9 @@ func_decl:
 	;
 
 func_decl_args:
-	var_decl 
-	| func_decl_args TCOMMA var_decl 
-	| %empty 
+	var_decl { $$ = new VariableList(); $$->push_back($<var_decl>1); }
+	| func_decl_args TCOMMA var_decl { $1->push_back($<var_decl>3); }
+	| %empty { $$ = new VariableList(); }
 	;
 	
 func_call:
@@ -146,8 +139,8 @@ expr:
 	IDENTIFIER { $<ident>$ = $1; }
 	| NUMBER
 	| IDENTIFIER TEQUAL expr { $$ = new NAssignment(*$<ident>1, *$3); }
-	| expr operation expr
-    | TLPAREN expr TRPAREN 
+	| expr operation expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
+    | TLPAREN expr TRPAREN { $$ = $2; }
     | func_call
     ;
    

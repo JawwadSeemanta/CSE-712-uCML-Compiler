@@ -17,19 +17,19 @@ int main(int argc, char **argv)
 	
     cout << programBlock << endl;
     
-    cout << "Checkpoint 01" << endl;
+    cout << "\nCheckpoint 01" << endl;
 	InitializeNativeTarget();
-    cout << "Checkpoint 02" << endl;
+    cout << "\nCheckpoint 02" << endl;
 	InitializeNativeTargetAsmPrinter();
-    cout << "Checkpoint 03" << endl;
+    cout << "\nCheckpoint 03" << endl;
 	InitializeNativeTargetAsmParser();
-    cout << "Checkpoint 04" << endl;
+    cout << "\nCheckpoint 04" << endl;
 	CodeGenContext context;
-    cout << "Checkpoint 05" << endl;
+    cout << "\nCheckpoint 05" << endl;
 	createCoreFunctions(context);
-    cout << "Checkpoint 06" << endl;
+    cout << "\nCheckpoint 06" << endl;
 	context.generateCode(*programBlock);
-    cout << "Checkpoint 07" << endl;
+    cout << "\nCheckpoint 07" << endl;
 	context.runCode();
 	
 	return 0;

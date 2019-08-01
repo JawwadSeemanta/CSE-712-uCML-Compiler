@@ -24,7 +24,7 @@ void CodeGenContext::generateCode(NBlock& root)
 	/* Print the bytecode in a human-readable format 
 	   to see if our program compiled properly
 	 */
-	std::cout << "Code is generated.\n";
+	std::cout << "Code is generated.\n\n\n";
 	// module->dump();
 
 	legacy::PassManager pm;
@@ -39,7 +39,7 @@ GenericValue CodeGenContext::runCode() {
 	ee->finalizeObject();
 	vector<GenericValue> noargs;
 	GenericValue v = ee->runFunction(mainFunction, noargs);
-	std::cout << "Code was run.\n";
+	std::cout << "Code was run.\n\n\n";
 	return v;
 }
 
