@@ -43,6 +43,7 @@ data_type int|double|void
 "-"		          				return TOKEN(TMINUS);
 "*"		          				return TOKEN(TMUL);
 "/"				          		return TOKEN(TDIV);
+"%"				          		return TOKEN(TREM);
 
 "=="				          	return TOKEN(TCEQ);
 "!="			          		return TOKEN(TCNE);

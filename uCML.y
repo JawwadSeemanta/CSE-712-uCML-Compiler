@@ -30,7 +30,7 @@
 
 %token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TCOLON
-%token <token> TPLUS TMINUS TMUL TDIV
+%token <token> TPLUS TMINUS TMUL TDIV TREM
 
 %token <string> id num data_type
 %token <token> EXTERN IF ELSE FOR RETURN
@@ -41,7 +41,7 @@
 /* Define the type of node of nonterminal symbols */
  
 %type <ident> IDENTIFIER DATA_TYPE
-%type <expr> NUMBER expr
+%type <expr> NUMBER expr func_call
 %type <varvec> func_decl_args
 %type <exprvec> call_args
 %type <block> program stmts block
@@ -51,6 +51,7 @@
 /* Operator precedence for mathematical operators */
 %left TPLUS TMINUS
 %left TMUL TDIV
+%left TREM
  
 /* define start point */
 %start program
@@ -69,8 +70,10 @@ stmt:
 	expr { $$ = new NExpressionStatement(*$1); }
 	| extern_decl
 	| var_decl 
+	
 	| conditional_stmt
 	| loop_stmt
+	
 	| RETURN expr { $$ = new NReturnStatement(*$2); }
 	| func_decl
 	
@@ -111,12 +114,12 @@ loop_stmt:
 	;
 
 block:
-	TLBRACE stmts TRBRACE 
-	| TLBRACE TRBRACE 
+	TLBRACE stmts TRBRACE { $$ = $2; }
+	| TLBRACE TRBRACE { $$ = new NBlock(); }
 	;
 
 func_decl:
-	def IDENTIFIER TLPAREN func_decl_args TRPAREN TCOLON DATA_TYPE define_sign block 
+	def IDENTIFIER TLPAREN func_decl_args TRPAREN TCOLON DATA_TYPE define_sign block { $$ = new NFunctionDeclaration(*$7, *$2, *$4, *$9); delete $4; }
 	;
 
 func_decl_args:
@@ -126,13 +129,13 @@ func_decl_args:
 	;
 	
 func_call:
-	IDENTIFIER TLPAREN call_args TRPAREN 
+	IDENTIFIER TLPAREN call_args TRPAREN { $$ = new NMethodCall(*$1, *$3); delete $3; }
 	;
 
 call_args:
-	expr 
-	| call_args TCOMMA expr 
-	| %empty 
+	expr { $$ = new ExpressionList(); $$->push_back($1); }
+	| call_args TCOMMA expr { $1->push_back($3); }
+	| %empty { $$ = new ExpressionList(); }
 	;
 
 expr:
@@ -153,6 +156,7 @@ arithmatic_operation:
 	| TPLUS
 	| TDIV
 	| TMUL
+	| TREM
 	;
 
 comparision_operation:
