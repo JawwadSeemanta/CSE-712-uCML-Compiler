@@ -36,5 +36,5 @@ tokens.cpp: uCML.l parser.hpp
 clean:
 	rm -rf $(FILES) output
 	
-test: a.out
+test: a.out run.sh
 	sh run.sh
