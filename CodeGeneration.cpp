@@ -1,5 +1,5 @@
-#include "node.h"
-#include "codegen.h"
+#include "SyntaxTreeNodes.h"
+#include "CodeGeneration.h"
 #include "parser.hpp"
 
 using namespace std;
@@ -17,15 +17,10 @@ void CodeGenContext::generateCode(NBlock& root)
 	
 	/* Push a new variable/block context */
 	pushBlock(bblock);
-	root.codeGen(*this); /* emit bytecode for the toplevel block */
+	root.codeGen(*this); /* bytecode for the toplevel block */
 	ReturnInst::Create(MyContext, this->currentBlock());
 	popBlock();
-	
-	/* Print the bytecode in a human-readable format 
-	   to see if our program compiled properly
-	 */
 	std::cout << "Code is generated.\n\n\n";
-	// module->dump();
 
 	legacy::PassManager pm;
 	pm.add(createPrintModulePass(outs()));
@@ -219,11 +214,6 @@ Value* NFunctionDeclaration::codeGen(CodeGenContext& context)
 	return function;
 }
 
-
-/* ############################################################################### */
-
-// Ustable Code Zone
-
 Value *NBool::codeGen(CodeGenContext &context) {
     cout << "Creating code for: bool" << endl;
     IRBuilder<> builder(context.currentBlock());
@@ -250,16 +240,14 @@ Value *NIf::codeGen(CodeGenContext &context) {
     else
         BranchInst::Create(thenBlock, mergeBlock, condValue, context.currentBlock());
 
-    // This is required so the the variables can be matched.
     context.pushBlock(thenBlock);
     Value *thenValue = truecond->codeGen(context);
     BranchInst::Create(mergeBlock, context.currentBlock());
     context.popBlock();
     
-    // create else block
+
     if (falsecond != nullptr) {
         function->getBasicBlockList().push_back(elseBlock);
-        // This is required so the the variables can be matched.
         context.pushBlock(elseBlock);
         Value *elseValue = falsecond->codeGen(context);
         
@@ -267,7 +255,6 @@ Value *NIf::codeGen(CodeGenContext &context) {
         context.popBlock();
     }
 
-    // create PHI node
     function->getBasicBlockList().push_back(mergeBlock);
     context.pushBlock(mergeBlock);
     cout << "Generated IF Statement" << endl;

@@ -1,0 +1,10 @@
+extern  printi(val:int):int   
+
+x:int = 30
+y:int = 40 
+if(x>y){
+echo(30)
+}
+else{
+echo(40)
+}

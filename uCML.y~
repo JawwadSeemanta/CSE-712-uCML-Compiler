@@ -60,7 +60,7 @@
 %%
 program: 
 	stmts { programBlock = $1; }
-	| {error_count++; std::exit(1);}
+	| {std::exit(1);}
 	;
 
 stmts: 

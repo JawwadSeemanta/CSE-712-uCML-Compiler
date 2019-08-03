@@ -1,0 +1,7 @@
+extern printi(val:int):void 
+
+def square(x: int):int =>  { return x * x }
+def sumOfSquares(x: int, y: int):int => {
+   return square(x) + square(y)
+}
+printi(sumOfSquares(4,5))
