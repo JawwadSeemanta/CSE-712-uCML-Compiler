@@ -34,7 +34,7 @@ tokens.cpp: uCML.l parser.hpp
 	flex -o $@ $^
 
 clean:
-	rm -f $(FILES)
+	rm -rf $(FILES) output
 	
-test: a.out example.txt
-	./a.out example.txt
+test: a.out
+	sh run.sh

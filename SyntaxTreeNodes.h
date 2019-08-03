@@ -150,8 +150,6 @@ public:
     NBinaryOperator *cond;
 
     NIf(NExpression *exprNode, NBlock *true_blockNode, NBlock *false_blockNode) {
-        std::cout << "If Node 1" << std::endl;
-        std::cout << typeid(*exprNode).name() << std::endl;
         if (dynamic_cast<NInteger *>(exprNode)) {
             NInteger *intNode = dynamic_cast<NInteger *>(exprNode);
             if (intNode->value > 0) {
@@ -167,7 +165,6 @@ public:
     }
 
     NIf(NExpression *exprNode, NBlock *true_blockNode) {
-        std::cout << "If Node 2" << std::endl;
         cond = dynamic_cast<NBinaryOperator *>(exprNode);
         truecond = true_blockNode;
         falsecond = nullptr;

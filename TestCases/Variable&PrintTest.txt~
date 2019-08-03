@@ -1,5 +1,0 @@
-x:int 
-x = 1
-echo(x)
-z:int = 2 * 5 + 5 / 5 + (100 * 7)
-echo(z)
