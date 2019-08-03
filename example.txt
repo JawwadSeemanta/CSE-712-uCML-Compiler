@@ -2,18 +2,21 @@ extern printi(i:int):void
 
 a:int
 a = 10
-b:int = 5 + 6
-
-return b
-
+b:int = a + 6
+printi(b)
+printi(b - 9)
+printi(a * 9)
 printi(b % 9)
 printi(5)
-echo(10)
+echo(10000)
 
-
-def square(x: int):int =>  { return x * x }
-def sumOfSquares(x: int, y: int):int => {
-   return square(x) + square(y)
+if(b>a){
+printi(0823490832934892)
 }
-echo(sumOfSquares(4,5))
 
+a:int = 3
+b:int = 7
+if(b<a){
+printi(22222)
+}
+else{printi(3333)}

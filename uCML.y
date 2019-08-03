@@ -45,8 +45,8 @@
 %type <varvec> func_decl_args
 %type <exprvec> call_args
 %type <block> program stmts block
-%type <stmt> stmt var_decl func_decl extern_decl
-%type <token> operation arithmatic_operation comparision_operation
+%type <stmt> stmt var_decl func_decl extern_decl conditional_stmt
+%type <token> operation arithmatic comparision add mul rem equal less great
 
 /* Operator precedence for mathematical operators */
 %left TPLUS TMINUS
@@ -104,8 +104,8 @@ var_decl:
 	;
 
 conditional_stmt:
-	IF TLPAREN expr TRPAREN block 
-	| IF TLPAREN expr TRPAREN block ELSE block 
+	IF TLPAREN expr TRPAREN block {$$ = new NIf($3,$5);}
+	| IF TLPAREN expr TRPAREN block ELSE block {$$ = new NIf($3,$5,$7);}
 	;
 
 loop_stmt:
@@ -146,26 +146,15 @@ expr:
     | TLPAREN expr TRPAREN { $$ = $2; }
     | func_call
     ;
-   
-operation:
-	arithmatic_operation | comparision_operation 
-	;
 
-arithmatic_operation:
-	TMINUS 
-	| TPLUS
-	| TDIV
-	| TMUL
-	| TREM
-	;
-
-comparision_operation:
-	TCEQ 
-	| TCNE 
-	| TCLT 
-	| TCLE 
-	| TCGT 
-	| TCGE
-	;
+operation: arithmatic | comparision;
+arithmatic: add | mul | rem;
+add: TMINUS | TPLUS ;
+mul: TDIV | TMUL ;
+rem: TREM ;
+comparision: equal | less | great;
+equal: TCEQ | TCNE ;
+less: TCLT | TCLE ;
+great: TCGT | TCGE ;
 	
 %%

@@ -18,7 +18,7 @@ void CodeGenContext::generateCode(NBlock& root)
 	/* Push a new variable/block context */
 	pushBlock(bblock);
 	root.codeGen(*this); /* emit bytecode for the toplevel block */
-	ReturnInst::Create(MyContext, bblock);
+	ReturnInst::Create(MyContext, this->currentBlock());
 	popBlock();
 	
 	/* Print the bytecode in a human-readable format 
@@ -99,6 +99,7 @@ Value* NBinaryOperator::codeGen(CodeGenContext& context)
 {
 	std::cout << "Creating binary operation " << op << endl;
 	Instruction::BinaryOps instr;
+	IRBuilder<> builder(context.currentBlock());
 	switch (op) {
 		case TPLUS: 	instr = Instruction::Add; goto math;
 		case TMINUS: 	instr = Instruction::Sub; goto math;
@@ -106,7 +107,18 @@ Value* NBinaryOperator::codeGen(CodeGenContext& context)
 		case TDIV: 		instr = Instruction::SDiv; goto math;
 		case TREM:		instr = Instruction::SRem; goto math;
 				
-		/* TODO comparison */
+		case TCNE:
+            return builder.CreateICmpNE(lhs.codeGen(context), rhs.codeGen(context), "");
+        case TCEQ:
+            return builder.CreateICmpEQ(lhs.codeGen(context), rhs.codeGen(context), "");
+        case TCLE:
+            return builder.CreateICmpSLE(lhs.codeGen(context), rhs.codeGen(context), "");
+        case TCGE:
+            return builder.CreateICmpSGE(lhs.codeGen(context), rhs.codeGen(context), "");
+        case TCGT:
+            return builder.CreateICmpSGT(lhs.codeGen(context), rhs.codeGen(context), "");
+        case TCLT:
+            return builder.CreateICmpSLT(lhs.codeGen(context), rhs.codeGen(context), "");
 	}
 
 	return NULL;
@@ -200,9 +212,66 @@ Value* NFunctionDeclaration::codeGen(CodeGenContext& context)
 	}
 	
 	block.codeGen(context);
-	ReturnInst::Create(MyContext, context.getCurrentReturnValue(), bblock);
+	ReturnInst::Create(MyContext, context.getCurrentReturnValue(), context.currentBlock() );
 
 	context.popBlock();
 	std::cout << "Creating function: " << id.name << endl;
 	return function;
 }
+
+
+/* ############################################################################### */
+
+// Ustable Code Zone
+
+Value *NBool::codeGen(CodeGenContext &context) {
+    cout << "Creating code for: bool" << endl;
+    IRBuilder<> builder(context.currentBlock());
+    if (value)
+        return builder.getTrue();
+    else
+        return builder.getFalse();
+}
+
+Value *NIf::codeGen(CodeGenContext &context) {
+    cout << "Creating IF Statement" << endl;
+    
+    Function *function = context.currentBlock()->getParent();
+
+    BasicBlock *thenBlock = BasicBlock::Create(MyContext, "then", function);
+    BasicBlock *elseBlock = BasicBlock::Create(MyContext, "else");
+    BasicBlock *mergeBlock = BasicBlock::Create(MyContext, "cont");
+
+    function->getBasicBlockList().push_back(thenBlock);
+    Value *condValue = cond->codeGen(context);
+
+    if (falsecond != nullptr)
+        BranchInst::Create(thenBlock, elseBlock, condValue, context.currentBlock());
+    else
+        BranchInst::Create(thenBlock, mergeBlock, condValue, context.currentBlock());
+
+    // This is required so the the variables can be matched.
+    context.pushBlock(thenBlock);
+    Value *thenValue = truecond->codeGen(context);
+    BranchInst::Create(mergeBlock, context.currentBlock());
+    context.popBlock();
+    
+    // create else block
+    if (falsecond != nullptr) {
+        function->getBasicBlockList().push_back(elseBlock);
+        // This is required so the the variables can be matched.
+        context.pushBlock(elseBlock);
+        Value *elseValue = falsecond->codeGen(context);
+        
+        BranchInst::Create(mergeBlock, context.currentBlock());
+        context.popBlock();
+    }
+
+    // create PHI node
+    function->getBasicBlockList().push_back(mergeBlock);
+    context.pushBlock(mergeBlock);
+    cout << "Generated IF Statement" << endl;
+
+    return function;
+}
+

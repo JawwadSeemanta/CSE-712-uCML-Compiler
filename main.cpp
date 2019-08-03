@@ -5,12 +5,14 @@
 using namespace std;
 
 extern int yyparse();
+extern FILE* yyin;
 extern NBlock* programBlock;
 
 void createCoreFunctions(CodeGenContext& context);
 
 int main(int argc, char **argv)
 {
+	yyin = fopen(argv[1],"r");
     cout << "Parsing Started" << endl;
 	yyparse();
     cout << "Parsing Ended" << endl;
@@ -31,6 +33,8 @@ int main(int argc, char **argv)
 	context.generateCode(*programBlock);
     cout << "\nCheckpoint 07" << endl;
 	context.runCode();
+	
+	fclose(yyin);
 	
 	return 0;
 }

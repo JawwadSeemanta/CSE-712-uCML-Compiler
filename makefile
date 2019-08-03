@@ -23,7 +23,7 @@ $(TARGET): $(GEN_SOURCES) $(GEN_HEADERS) $(OBJS)
 	g++ -g -o $@ $(OBJS) $(LIBS) $(LDFLAGS)
 
 %.o: %.cpp
-	g++ -g -c $(CPPFLAGS) -o $@ $<
+	g++ -g -O3 -c $(CPPFLAGS) -o $@ $<
 	
 parser.hpp: parser.cpp
 
@@ -37,4 +37,4 @@ clean:
 	rm -f $(FILES)
 	
 test: a.out example.txt
-	cat example.txt | ./a.out
+	./a.out example.txt

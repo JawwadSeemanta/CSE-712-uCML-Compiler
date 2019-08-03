@@ -130,3 +130,58 @@ public:
 		type(type), id(id), arguments(arguments), block(block) { }
 	virtual llvm::Value* codeGen(CodeGenContext& context);
 };
+
+
+
+
+
+
+/* ############################################################################### */
+
+// Ustable Code Zone
+
+class NBool : public NExpression {
+public:
+    bool value = false;
+
+    NBool(bool val) {
+        value = val;
+    }
+
+    virtual llvm::Value *codeGen(CodeGenContext &context);
+};
+
+class NIf : public NStatement {
+public:
+    NBlock *truecond;
+    NBlock *falsecond;
+    NBinaryOperator *cond;
+
+    NIf(NExpression *exprNode, NBlock *true_blockNode, NBlock *false_blockNode) {
+        std::cout << "If Node 1" << std::endl;
+        std::cout << typeid(*exprNode).name() << std::endl;
+        if (dynamic_cast<NInteger *>(exprNode)) {
+            NInteger *intNode = dynamic_cast<NInteger *>(exprNode);
+            if (intNode->value > 0) {
+                cond = reinterpret_cast<NBinaryOperator *>(new NBool(true));
+            } else {
+                cond = reinterpret_cast<NBinaryOperator *>(new NBool(false));
+            }
+        } else {
+            cond = (NBinaryOperator *) exprNode;
+        }
+        truecond = true_blockNode;
+        falsecond = false_blockNode;
+    }
+
+    NIf(NExpression *exprNode, NBlock *true_blockNode) {
+        std::cout << "If Node 2" << std::endl;
+        cond = dynamic_cast<NBinaryOperator *>(exprNode);
+        truecond = true_blockNode;
+        falsecond = nullptr;
+    }
+
+    virtual llvm::Value *codeGen(CodeGenContext &context);
+};
+
+
